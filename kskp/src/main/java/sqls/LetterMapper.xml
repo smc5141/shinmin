@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hk.letter">
+
+	<insert id="sendLetter" parameterType="LetterDto">
+		INSERT INTO LETTER(L_SEQ,L_REGDATE,L_SENDER,L_RECEIVER,L_TITLE,L_CONTS,L_SENDDELFLAG,L_RECDELFLAG)
+		VALUES(LETTER_SEQ.NEXTVAL,SYSDATE,#{l_sender},#{l_receiver},#{l_title},#{l_conts},'0','0')
+	</insert>
+
+	<select id="letterlist" parameterType="String" resultType="LetterDto">
+		SELECT * FROM(
+		     SELECT ROW_NUMBER() OVER (ORDER BY L_SEQ DESC) AS RN,
+		     L_SEQ, L_REGDATE, L_SENDER, L_RECEIVER,L_TITLE,L_CONTS,L_SENDDELFLAG,L_RECDELFLAG 
+		      FROM LETTER 
+		     WHERE L_RECEIVER=#{l_receiver}
+		       AND L_RECDELFLAG=0
+			)
+		WHERE CEIL(RN/5) = #{pnum}  
+	</select>
+	
+	<select id="sendletterlist" parameterType="String" resultType="LetterDto">
+		SELECT * FROM(
+		     SELECT ROW_NUMBER() OVER (ORDER BY L_SEQ DESC) AS RN,
+		     L_SEQ, L_REGDATE, L_SENDER, L_RECEIVER,L_TITLE,L_CONTS,L_SENDDELFLAG,L_RECDELFLAG FROM LETTER WHERE L_SENDER=#{l_sender} AND L_SENDDELFLAG=0 
+			)
+		WHERE CEIL(RN/5) = #{pnum}
+	</select>
+	
+	<select id="letterdetail" parameterType="int" resultType="LetterDto">
+		SELECT * FROM LETTER WHERE L_SEQ=#{l_seq}	
+	</select>
+	
+	<select id="sendletterdetail" parameterType="int" resultType="LetterDto">
+		SELECT * FROM LETTER WHERE L_SEQ=#{l_seq}	
+	</select>
+	<delete id="senddelflag" parameterType="int">
+		UPDATE LETTER SET L_SENDDELFLAG='1' WHERE L_SEQ=#{l_seq} 
+	</delete>
+	
+	<delete id="recdelflag" parameterType="int">
+		UPDATE LETTER SET L_RECDELFLAG='1' WHERE L_SEQ=#{l_seq} 
+	</delete>
+	
+	<update id="sendmuldel" parameterType="Map">
+	UPDATE LETTER SET L_SENDDELFLAG='1' WHERE L_SEQ IN
+	<foreach collection="seqs" item="l_seq" open="(" close=")" separator="," >
+		#{l_seq}
+	</foreach>
+	</update>
+	
+	<update id="recmuldel" parameterType="Map">
+	UPDATE LETTER SET L_RECDELFLAG='1' WHERE L_SEQ IN
+	<foreach collection="seqs" item="l_seq" open="(" close=")" separator="," >
+		#{l_seq}
+	</foreach>
+	</update>
+	
+	<delete id="delletter" parameterType="LetterDto">
+	DELETE LETTER WHERE L_SENDDELFLAG=1 AND L_RECDELFLAG=1
+	</delete>
+
+	<select id="pcount" resultType="int" parameterType="LetterDto">
+		SELECT CEIL(COUNT(CASE WHEN L_RECDELFLAG=0 THEN 1 END)/5) FROM LETTER WHERE L_RECEIVER=#{l_receiver}
+	</select>
+	
+	<select id="spcount" resultType="int" parameterType="LetterDto">
+		SELECT CEIL(COUNT(CASE WHEN L_SENDDELFLAG=0 THEN 1 END)/5) FROM LETTER WHERE L_SENDER=#{l_sender}
+	</select>
+
+	<select id="lcount" resultType="int" parameterType="String" >
+		select count(*) from letter where L_receiver = #{l_receiver} and L_RECDELFLAG=0
+	</select>
+	
+	<select id="scount" resultType="int" parameterType="String" >
+		select count(*) from letter where L_SENDER = #{l_sender} and L_SENDDELFLAG=0
+	</select>
+
+</mapper>

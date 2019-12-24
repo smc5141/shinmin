@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hk.login">
+
+	<!-- 일반회원 이메일인증 회원가입 -->
+	<insert id="minsertUser" parameterType="MembersDto">
+		INSERT INTO MEMBERS(M_SEQ,M_PW,M_STATUS,M_NAME,M_PHONE,M_EMAIL,M_REGDATE,M_ACC,M_IMG) VALUES 
+		(MEMBERS_SEQ.NEXTVAL,#{m_pw},'M',#{m_name},NULL,#{m_email},SYSDATE,NULL,NULL)
+	</insert>
+		<!-- 일반회원 핸드폰인증 회원가입 -->
+	<insert id="minsertUser1" parameterType="MembersDto">
+		INSERT INTO MEMBERS(M_SEQ,M_PW,M_STATUS,M_NAME,M_PHONE,M_EMAIL,M_REGDATE,M_ACC,M_IMG) VALUES 
+		(MEMBERS_SEQ.NEXTVAL,#{m_pw},'M',#{m_name},#{m_phone},#{m_email},SYSDATE,NULL,NULL)
+	</insert>
+		<!-- 네이버로그인 데이터 -->
+	<insert id="naverUser" parameterType="MembersDto">
+		INSERT INTO MEMBERS(M_SEQ,M_PW,M_STATUS,M_NAME,M_PHONE,M_EMAIL,M_REGDATE,M_ACC,M_IMG) VALUES 
+		(MEMBERS_SEQ.NEXTVAL,'1111','M',#{m_name},NULL,#{m_email},SYSDATE,NULL,NULL)
+	</insert>
+	
+	<!-- 가이드 회원가입 -->
+	<insert id="ginsertUser" parameterType="GuideDto">
+		INSERT INTO GUIDE(GU_SEQ,GU_PW,GU_NAME,GU_PHONE,GU_EMAIL,GU_REGDATE,GU_APPFLAG,GU_IMG,GU_INTRO,GU_CAREER,GU_BANK,GU_ACC,GU_SALARY,GU_BACKIMG) VALUES 
+		(GUIDE_SEQ.NEXTVAL,#{gu_pw},#{gu_name},#{gu_phone},#{gu_email},SYSDATE,'0',#{gu_img},#{gu_intro},NULL,#{gu_bank},#{gu_acc},NULL,NULL)
+	</insert>
+	
+	<!-- 로그인 -->
+	<select id="mLogin" parameterType="MembersDto" resultType="MembersDto">
+ 		select * from MEMBERS Where M_EMAIL=#{m_email} AND M_PW=#{m_pw}
+	</select>
+	
+	<select id="gLogin" parameterType="GuideDto" resultType="GuideDto">
+ 		select * from GUIDE Where GU_EMAIL=#{gu_email} AND GU_PW=#{gu_pw}
+	</select>
+
+	<!-- 일반회원 정보 조회 -->
+	<select id="muserinfo" parameterType="MembersDto" resultType="MembersDto">
+		select * from MEMBERS
+		WHERE M_SEQ=#{m_seq}
+	</select>
+
+	<!-- 가이드 정보 조회 -->
+	<select id="guserinfo" parameterType="GuideDto" resultType="GuideDto">
+		select * from GUIDE
+		WHERE GU_SEQ=#{gu_seq}
+	</select>
+	
+	<!-- 일반회원	정보 수정 -->
+	<update id="userUpdate" parameterType="MembersDto">
+		UPDATE MEMBERS SET M_PW=#{m_pw}, M_PHONE=#{m_phone},M_IMG=#{m_img} WHERE M_SEQ=#{m_seq}
+	</update>
+	<!-- 가이드	정보 수정 -->
+	<update id="guserUpdate" parameterType="GuideDto">
+		UPDATE GUIDE SET GU_PW=#{gu_pw},GU_BANK=#{gu_bank},GU_ACC=#{gu_acc}, GU_IMG=#{gu_img}, GU_BACKIMG=#{gu_backimg}, GU_PHONE=#{gu_phone}, GU_INTRO=#{gu_intro} WHERE GU_SEQ=#{gu_seq}
+	</update>
+	
+	<!-- 일반회원 전체 목록 조회 -->
+	<select id="getMUserStatus" resultType="MembersDto">
+	select 		
+			M_NAME,
+			M_EMAIL,
+			M_REGDATE,
+			M_STATUS
+	 FROM   MEMBERS
+	 WHERE M_STATUS='M'
+	</select>
+	
+	<!-- 가이드 전체 목록 조회 -->
+	<select id="getGUserStatus" resultType="GuideDto">
+		select 		
+			*
+	 FROM GUIDE	
+	</select>
+	
+
+	<!-- 일반 아이디 중복 체크 -->
+	<select id="idChk" parameterType="String" resultType="MembersDto">
+		SELECT M_EMAIL FROM MEMBERS WHERE M_EMAIL=#{m_email}
+	</select>
+	<!-- 가이드 아이디 중복 체크 -->
+	<select id="idChk1" parameterType="String" resultType="GuideDto">
+		SELECT GU_EMAIL FROM GUIDE WHERE GU_EMAIL=#{gu_email}
+	</select>
+		<!-- 가이드 가입 승인  -->
+	<update id="guideApp" parameterType="GuideDto">
+		UPDATE GUIDE SET GU_APPFLAG='1' WHERE gu_seq=#{gu_seq}
+	</update>
+	
+		<!-- 가이드 가입 거절 -->
+	<delete id="delGuide" parameterType="GuideDto">
+	DELETE GUIDE WHERE GU_SEQ=#{gu_seq}
+	</delete>
+	<!-- 가이드 페이징 -->
+	<select id="pcount" resultType="int" parameterType="GuideDto">
+		SELECT CEIL(COUNT(CASE WHEN GU_APPFLAG=0 THEN 1 END)/10) FROM GUIDE 
+	</select>
+
+	
+	<select id="memailCheck" resultType="int" parameterType="MembersDto">
+		SELECT COUNT(*) FROM MEMBERS WHERE M_EMAIL=#{email}
+	</select>
+	
+	<select id="gemailCheck" resultType="int" parameterType="GuideDto">
+		SELECT COUNT(*) FROM GUIDE WHERE GU_EMAIL=#{email}
+	</select>
+	
+
+	<!-- 가이드 승인목록리스트 -->
+	<select id="getapplist" resultType="GuideDto">
+		select * FROM(
+		SELECT ROW_NUMBER() OVER (ORDER BY GU_SEQ DESC) AS RN,
+		GU_SEQ,GU_NAME,GU_REGDATE,GU_APPFLAG FROM GUIDE WHERE GU_APPFLAG=0
+		) WHERE CEIL(RN/10)=#{pnum}
+	</select>
+
+	<!--가이드 수익금액 정산-->
+	<update id="guidesalary" parameterType="SalaryDto">
+		UPDATE GUIDE SET GU_SALARY= NVL(GU_SALARY, 0)+#{s_gcost} WHERE GU_SEQ=#{gu_seq}
+	</update>
+	
+	<!--관리자  수익금액-->
+	<update id="adminsalary" parameterType="int">
+		UPDATE MEMBERS SET M_SALARY= NVL(M_SALARY, 0)+#{m_salary} WHERE M_STATUS='A'
+	</update>
+	
+
+	<!-- 메인화면에서  회원가입-->
+	
+
+</mapper>

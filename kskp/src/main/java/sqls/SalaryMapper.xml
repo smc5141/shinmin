@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hk.salary">
+
+
+	<!-- 가이드 수익 송금 신청 -->
+	<insert id="appsal" parameterType="SalaryDto">
+	INSERT INTO SALARY (S_SEQ,GU_SEQ,S_COST,S_REGDATE,S_BANK,S_ACC,S_FLAG,S_AREGDATE,S_GCOST)
+	VALUES(salary_seq.nextval,#{gu_seq},#{s_cost},SYSDATE,#{s_bank},#{s_acc},0,null,#{s_gcost})
+    </insert>
+	
+	<!-- 송금 내역 -->
+	<select id="sallist" resultType="SalaryDto" parameterType="int">
+	SELECT gu.GU_NAME,s.S_BANK,s.S_ACC,s.S_GCOST,s.S_REGDATE FROM GUIDE gu,SALARY s WHERE gu.GU_SEQ=s.GU_SEQ AND gu.GU_SEQ=#{gu_seq} AND S_FLAG=0
+	</select>
+	
+	<!-- 가이드 정산 내역 -->
+	<select id="getsallist" resultType="SalaryDto" parameterType="int">
+	SELECT gu.GU_NAME,s.S_BANK,s.S_ACC,s.S_GCOST,s.S_AREGDATE FROM GUIDE gu,SALARY s WHERE gu.GU_SEQ=s.GU_SEQ AND gu.GU_SEQ=#{gu_seq} AND S_FLAG=1
+	</select>
+	
+	<!-- 관리자 송금신청확인 리스트  -->
+	<select id="adminsallist" resultType="SalaryDto" >
+	SELECT gu.GU_SEQ, gu.GU_NAME, s.S_BANK,s.S_ACC,s.S_GCOST,s.S_REGDATE,s.S_SEQ, s.S_COST FROM GUIDE gu,SALARY s WHERE gu.GU_SEQ=s.GU_SEQ AND s.S_FLAG=0
+	</select>
+
+	<!-- 관리자 정산확인 -->
+	<update id="okaysal" parameterType="int" >
+	UPDATE SALARY SET S_FLAG=1, S_AREGDATE=SYSDATE WHERE S_SEQ=#{s_seq}
+	</update>
+
+	<!--  정산받은 금액 -->
+	<select id="getsal" parameterType="int" resultType="SalaryDto">
+	<![CDATA[ 
+	SELECT SUM(S_COST) as getsal FROM SALARY s,GUIDE gu WHERE gu.GU_SEQ=#{gu_seq} AND gu.GU_SEQ=s.GU_SEQ AND s.S_FLAG=1
+	 ]]>
+	</select>
+	
+	<!-- 수수료를 때고 정산받은 금액 -->
+	<select id="getgsal" parameterType="int" resultType="SalaryDto">
+	<![CDATA[ 
+	SELECT SUM(S_GCOST) as getgsal FROM SALARY s,GUIDE gu WHERE gu.GU_SEQ=#{gu_seq} AND gu.GU_SEQ=s.GU_SEQ AND s.S_FLAG=1
+	 ]]>
+	</select>
+	
+	<select id="waitsal" parameterType="int" resultType="SalaryDto">
+	 SELECT * FROM SALARY WHERE GU_SEQ=#{gu_seq} AND s_flag=0
+	</select>
+
+	<!-- 관리자 수익 -->
+	<select id="adminsal" resultType="SalaryDto">
+	 SELECT gu.GU_SEQ, gu.GU_NAME, s.S_BANK,s.S_ACC,s.S_GCOST,s.S_AREGDATE,s.S_SEQ, s.S_COST,m.M_SALARY FROM GUIDE gu,SALARY s,MEMBERS m WHERE gu.GU_SEQ=s.GU_SEQ AND s.S_FLAG=1 and m.M_STATUS='A' 
+	</select>
+
+</mapper>
